@@ -1,27 +1,33 @@
-// This platform integrates Honeywell tcc into homebridge
+// This platform integrates Honeywell warmup4ie into homebridge
 // As I only own single thermostat, so this only works with one, but it is
 // conceivable to handle mulitple with additional coding.
 //
 // The configuration is stored inside the ../config.json
 // {
-//     "platform": "tcc",
+//     "platform": "warmup4ie",
 //     "name":     "Thermostat",
 //     "username" : "username/email",
 //     "password" : "password",
 //     "debug" : "True",      - Optional
 //     "refresh": "60",       - Optional
 //     "devices" : [
-//        { "deviceID": "123456789", "name" : "Main Floor Thermostat" },
+//        { "location": "123456789", "name" : "Main Floor Thermostat" },
 //        { "deviceID": "123456789", "name" : "Upper Floor Thermostat" }
 //     ]
 // }
+//
+//     name: YOUR_DESCRIPTION
+//    username: YOUR_E_MAIL_ADDRESS
+//    password: YOUR_PASSWORD
+//    location: YOUR_LOCATION_NAME
+//    room: YOUR_ROOM_NAME
 //
 
 /*jslint node: true */
 'use strict';
 
-var debug = require('debug')('tcc');
-var Accessory, Service, Characteristic, UUIDGen, FakeGatoHistoryService, CustomCharacteristic, tcc;
+var debug = require('debug')('warmup4ie');
+var Service, Characteristic, UUIDGen, FakeGatoHistoryService, CustomCharacteristic, warmup4ie;
 var os = require("os");
 var hostname = os.hostname();
 const moment = require('moment');
@@ -29,41 +35,40 @@ const moment = require('moment');
 var myAccessories = [];
 var session; // reuse the same login session
 var updating; // Only one change at a time!!!!
-var refresh,storage;
+var refresh, storage;
 
 module.exports = function(homebridge) {
 
-  Accessory = homebridge.platformAccessory;
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
   UUIDGen = homebridge.hap.uuid;
   CustomCharacteristic = require('./lib/CustomCharacteristic.js')(homebridge);
   FakeGatoHistoryService = require('fakegato-history')(homebridge);
-  tcc = require('./lib/tcc.js');
+  warmup4ie = require('./lib/warmup4ie.js').Warmup4IE;
 
-  tcc.setCharacteristic(Characteristic);
+  // warmup4ie.setCharacteristic(Characteristic);
 
-  homebridge.registerPlatform("homebridge-tcc", "tcc", tccPlatform);
+  homebridge.registerPlatform("homebridge-warmup4ie", "warmup4ie", warmup4iePlatform);
 }
 
-function tccPlatform(log, config, api) {
+function warmup4iePlatform(log, config, api) {
 
   this.username = config['username'];
   this.password = config['password'];
   refresh = config['refresh'] || 60; // Update every minute
   this.log = log;
-  this.devices = config['devices'];
+  // this.devices = config['devices'];
   storage = config['storage'] || "fs";
 
   updating = false;
 }
 
-tccPlatform.prototype = {
+warmup4iePlatform.prototype = {
   accessories: function(callback) {
-    this.log("Logging into tcc...");
+    this.log("Logging into warmup4ie...");
     var that = this;
-    tcc.login(that.username, that.password).then(function(login) {
-      this.log("Logged into tcc!", this.devices);
+    warmup4ie(this).then(function(login) {
+      this.log("Logged into warmup4ie!", this.devices);
       session = login;
 
       let requests = this.devices.map((device) => {
@@ -76,7 +81,7 @@ tccPlatform.prototype = {
                 resolve();
               } else {
 
-                var newAccessory = new tccAccessory(that.log, device.name,
+                var newAccessory = new warmup4ieAccessory(that.log, device.name,
                   deviceData, that.username, that.password, device.deviceID, device.usePermanentHolds);
                 // store accessory in myAccessories
                 myAccessories.push(newAccessory);
@@ -106,19 +111,19 @@ tccPlatform.prototype = {
 
 function updateStatus(service, data) {
   service.getCharacteristic(Characteristic.TargetTemperature)
-    .updateValue(Number(tcc.toHBTargetTemperature(data)));
+    .updateValue(Number(warmup4ie.toHBTargetTemperature(data)));
 
   service.getCharacteristic(Characteristic.CurrentTemperature)
-    .updateValue(Number(tcc.toHBTemperature(data, data.latestData.uiData.DispTemperature)));
+    .updateValue(Number(warmup4ie.toHBTemperature(data, data.latestData.uiData.DispTemperature)));
 
   service.getCharacteristic(Characteristic.CurrentHeatingCoolingState)
     .updateValue(data.latestData.uiData.EquipmentOutputStatus);
 
   service.getCharacteristic(Characteristic.TargetHeatingCoolingState)
-    .updateValue(Number(tcc.toHomeBridgeHeatingCoolingSystem(data.latestData.uiData.SystemSwitchPosition)));
+    .updateValue(Number(warmup4ie.toHomeBridgeHeatingCoolingSystem(data.latestData.uiData.SystemSwitchPosition)));
 
   service.getCharacteristic(Characteristic.TemperatureDisplayUnits)
-    .updateValue(Number(tcc.toHBTemperatureDisplayUnits(data.latestData.uiData.DisplayUnits)));
+    .updateValue(Number(warmup4ie.toHBTemperatureDisplayUnits(data.latestData.uiData.DisplayUnits)));
 
   if (data.latestData.uiData.IndoorHumiditySensorAvailable && data.latestData.uiData.IndoorHumiditySensorNotFault)
     service.getCharacteristic(Characteristic.CurrentRelativeHumidity)
@@ -126,14 +131,14 @@ function updateStatus(service, data) {
 
   if (data.latestData.uiData.SwitchAutoAllowed) {
     service.getCharacteristic(Characteristic.CoolingThresholdTemperature)
-      .updateValue(Number(tcc.toHBTemperature(data, data.latestData.uiData.CoolSetpoint)));
+      .updateValue(Number(warmup4ie.toHBTemperature(data, data.latestData.uiData.CoolSetpoint)));
     service.getCharacteristic(Characteristic.HeatingThresholdTemperature)
-      .updateValue(Number(tcc.toHBTemperature(data, data.latestData.uiData.HeatSetpoint)));
+      .updateValue(Number(warmup4ie.toHBTemperature(data, data.latestData.uiData.HeatSetpoint)));
   }
 
 }
 
-tccPlatform.prototype.periodicUpdate = function(t) {
+warmup4iePlatform.prototype.periodicUpdate = function(t) {
   var t = updateValues(this);
 }
 
@@ -146,8 +151,8 @@ function updateValues(that) {
         that.log("ERROR: UpdateValues", accessory.name, err);
         that.log("updateValues: Device not reachable", accessory.name);
         //                accessory.newAccessory.updateReachability(false);
-        tcc.login(that.username, that.password).then(function(login) {
-          that.log("Logged into tcc!");
+        warmup4ie.login(that.username, that.password).then(function(login) {
+          that.log("Logged into warmup4ie!");
           session = login;
         }.bind(this)).fail(function(err) {
           // tell me if login did not work!
@@ -165,15 +170,15 @@ function updateValues(that) {
           //                    accessory.newAccessory.updateReachability(false);
         }
 
-        that.log("Change", accessory.name, tcc.diff(accessory.device, deviceData));
+        that.log("Change", accessory.name, warmup4ie.diff(accessory.device, deviceData));
         accessory.device = deviceData;
 
         accessory.log_event_counter++;
         if (!(accessory.log_event_counter % 10)) {
           accessory.loggingService.addEntry({
             time: moment().unix(),
-            currentTemp: roundInt(tcc.toHBTemperature(deviceData, deviceData.latestData.uiData.DispTemperature)),
-            setTemp: roundInt(tcc.toHBTargetTemperature(deviceData)),
+            currentTemp: roundInt(warmup4ie.toHBTemperature(deviceData, deviceData.latestData.uiData.DispTemperature)),
+            setTemp: roundInt(warmup4ie.toHBTargetTemperature(deviceData)),
             valvePosition: roundInt(deviceData.latestData.uiData.EquipmentOutputStatus)
           });
           accessory.log_event_counter = 0;
@@ -189,14 +194,14 @@ function updateValues(that) {
 
 // give this function all the parameters needed
 
-function tccAccessory(log, name, deviceData, username, password, deviceID, usePermanentHolds) {
+function warmup4ieAccessory(log, name, deviceData, username, password, deviceID, usePermanentHolds) {
 
   var uuid = UUIDGen.generate(name);
 
 //  var accessory = new Accessory(name, uuid);
 
   this.log = log;
-  this.log("Adding TCC Device", name, deviceID);
+  this.log("Adding warmup4ie Device", name, deviceID);
   this.name = name;
   this.device = deviceData;
   this.device.deviceLive = "false";
@@ -207,7 +212,7 @@ function tccAccessory(log, name, deviceData, username, password, deviceID, usePe
   this.log_event_counter = 9;   // Update fakegato on startup
 }
 
-tccAccessory.prototype = {
+warmup4ieAccessory.prototype = {
 
   // This is to change the system switch to a different position
 
@@ -220,15 +225,15 @@ tccAccessory.prototype = {
       // TODO:
       // verify that the task did succeed
 
-      tcc.login(this.username, this.password).then(function(session) {
-        session.setSystemSwitch(that.deviceID, tcc.toTCCHeadingCoolingSystem(value)).then(function(taskId) {
+      warmup4ie.login(this.username, this.password).then(function(session) {
+        session.setSystemSwitch(that.deviceID, warmup4ie.towarmup4ieHeadingCoolingSystem(value)).then(function(taskId) {
           that.log("Successfully changed system!");
           that.log(taskId);
           updateValues(that);
           callback(null, Number(1));
         });
       }).fail(function(err) {
-        that.log('tcc Failed:', err);
+        that.log('warmup4ie Failed:', err);
         callback(null, Number(0));
       });
       callback(null, Number(0));
@@ -252,13 +257,13 @@ tccAccessory.prototype = {
       if (value > 38)
         value = 38;
 
-      value = tcc.toTCCTemperature(that, value);
+      value = warmup4ie.towarmup4ieTemperature(that, value);
       // TODO:
       // verify that the task did succeed
 
-      //            tcc.login(this.username, this.password).then(function(session) {
+      //            warmup4ie.login(this.username, this.password).then(function(session) {
       var heatSetPoint, coolSetPoint = null;
-      switch (tcc.toHomeBridgeHeatingCoolingSystem(that.device.latestData.uiData.SystemSwitchPosition)) {
+      switch (warmup4ie.toHomeBridgeHeatingCoolingSystem(that.device.latestData.uiData.SystemSwitchPosition)) {
         case 0:
           break;
         case 1:
@@ -316,11 +321,11 @@ tccAccessory.prototype = {
       if (value > 38)
         value = 38;
 
-      value = tcc.toTCCTemperature(that, value);
+      value = warmup4ie.towarmup4ieTemperature(that, value);
       // TODO:
       // verify that the task did succeed
 
-      tcc.login(this.username, this.password).then(function(session) {
+      warmup4ie.login(this.username, this.password).then(function(session) {
         session.setHeatCoolSetpoint(that.deviceID, null, value, that.usePermanentHolds).then(function(taskId) {
           that.log("Successfully changed cooling threshold!");
           that.log(taskId);
@@ -330,7 +335,7 @@ tccAccessory.prototype = {
           callback(null, Number(1));
         });
       }).fail(function(err) {
-        that.log('tcc Failed:', err);
+        that.log('warmup4ie Failed:', err);
         callback(null, Number(0));
       });
       callback(null, Number(0));
@@ -355,11 +360,11 @@ tccAccessory.prototype = {
       if (value > 38)
         value = 38;
 
-      value = tcc.toTCCTemperature(that, value);
+      value = warmup4ie.towarmup4ieTemperature(that, value);
       // TODO:
       // verify that the task did succeed
 
-      tcc.login(this.username, this.password).then(function(session) {
+      warmup4ie.login(this.username, this.password).then(function(session) {
         session.setHeatCoolSetpoint(that.deviceID, value, null).then(function(taskId) {
           that.log("Successfully changed heating threshold!");
           that.log(taskId);
@@ -369,7 +374,7 @@ tccAccessory.prototype = {
           callback(null, Number(1));
         });
       }).fail(function(err) {
-        that.log('tcc Failed:', err);
+        that.log('warmup4ie Failed:', err);
         callback(null, Number(0));
       });
       callback(null, Number(0));
@@ -391,7 +396,7 @@ tccAccessory.prototype = {
     var informationService = new Service.AccessoryInformation();
 
     informationService
-      .setCharacteristic(Characteristic.Manufacturer, "TCC")
+      .setCharacteristic(Characteristic.Manufacturer, "warmup4ie")
       .setCharacteristic(Characteristic.SerialNumber, hostname + "-" + this.deviceID)
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version);
     // Thermostat Service
