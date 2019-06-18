@@ -66,46 +66,18 @@ function warmup4iePlatform(log, config, api) {
 warmup4iePlatform.prototype = {
   accessories: function(callback) {
     this.log("Logging into warmup4ie...");
-    var that = this;
-    warmup4ie(this).then(function(login) {
-      this.log("Logged into warmup4ie!", this.devices);
-      session = login;
-
-      let requests = this.devices.map((device) => {
-        return new Promise((resolve) => {
-
-          session.CheckDataSession(device.deviceID,
-            function(err, deviceData) {
-              if (err) {
-                that.log("Create Device Error", err);
-                resolve();
-              } else {
-
-                var newAccessory = new warmup4ieAccessory(that.log, device.name,
-                  deviceData, that.username, that.password, device.deviceID, device.usePermanentHolds);
-                // store accessory in myAccessories
-                myAccessories.push(newAccessory);
-                resolve();
-              }
-            });
-        });
-      })
-
-      // Need to wait for all devices to be configured
-
-      Promise.all(requests).then(() => {
+    // debug("Rooms", this);
+    this.thermostat = new warmup4ie(this, function(err, rooms) {
+      if (!err) {
+        this.log("Found %s room(s)", rooms.length);
+        rooms.forEach(function(room) {
+          this.log("Adding", room);
+          var newAccessory = new Warmup4ieAccessory(this, room.roomName, this.thermostat.room[room.roomID]);
+          myAccessories.push(newAccessory);
+        }.bind(this));
         callback(myAccessories);
-        that.periodicUpdate();
-        setInterval(that.periodicUpdate.bind(this), refresh * 1000);
-
-      });
-
-      // End of login section
-    }.bind(this)).fail(function(err) {
-      // tell me if login did not work!
-      that.log("Error during Login:", err);
-      callback(err);
-    });
+      }
+    }.bind(this));
   }
 };
 
@@ -194,25 +166,21 @@ function updateValues(that) {
 
 // give this function all the parameters needed
 
-function warmup4ieAccessory(log, name, deviceData, username, password, deviceID, usePermanentHolds) {
+function Warmup4ieAccessory(that, name, room ) {
 
   var uuid = UUIDGen.generate(name);
 
-//  var accessory = new Accessory(name, uuid);
-
-  this.log = log;
-  this.log("Adding warmup4ie Device", name, deviceID);
+  this.log = that.log;
+  this.log("Adding warmup4ie Device", name);
   this.name = name;
-  this.device = deviceData;
-  this.device.deviceLive = "false";
-  this.username = username;
-  this.password = password;
-  this.deviceID = deviceID;
-  this.usePermanentHolds = usePermanentHolds;
-  this.log_event_counter = 9;   // Update fakegato on startup
+  this.username = that.username;
+  this.password = that.password;
+  this.room = room;
+
+  this.thermostat = new warmup4ie(this, );
 }
 
-warmup4ieAccessory.prototype = {
+Warmup4ieAccessory.prototype = {
 
   // This is to change the system switch to a different position
 
@@ -397,7 +365,7 @@ warmup4ieAccessory.prototype = {
 
     informationService
       .setCharacteristic(Characteristic.Manufacturer, "warmup4ie")
-      .setCharacteristic(Characteristic.SerialNumber, hostname + "-" + this.deviceID)
+      .setCharacteristic(Characteristic.SerialNumber, hostname + "-" + this.name)
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version);
     // Thermostat Service
     this.thermostatService = new Service.Thermostat(this.name);
@@ -444,9 +412,9 @@ warmup4ieAccessory.prototype = {
 
     this.thermostatService.log = this.log;
     this.loggingService = new FakeGatoHistoryService("thermo", this.thermostatService, {
-          storage: storage,
-          minutes: refresh * 10 / 60
-        });
+      storage: storage,
+      minutes: refresh * 10 / 60
+    });
 
     this.thermostatService.addCharacteristic(CustomCharacteristic.ValvePosition);
     this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramCommand);
