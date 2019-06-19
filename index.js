@@ -71,7 +71,7 @@ warmup4iePlatform.prototype = {
       if (!err) {
         this.log("Found %s room(s)", rooms.length);
         rooms.forEach(function(room) {
-          this.log("Adding", room);
+          this.log("Adding", room.roomName);
           var newAccessory = new Warmup4ieAccessory(this, room.roomName, this.thermostat.room[room.roomID]);
           myAccessories.push(newAccessory);
         }.bind(this));
@@ -166,7 +166,7 @@ function updateValues(that) {
 
 // give this function all the parameters needed
 
-function Warmup4ieAccessory(that, name, room ) {
+function Warmup4ieAccessory(that, name, room) {
 
   var uuid = UUIDGen.generate(name);
 
@@ -177,7 +177,7 @@ function Warmup4ieAccessory(that, name, room ) {
   this.password = that.password;
   this.room = room;
 
-  this.thermostat = new warmup4ie(this, );
+  // this.thermostat = new warmup4ie(this, );
 }
 
 Warmup4ieAccessory.prototype = {
@@ -370,21 +370,12 @@ Warmup4ieAccessory.prototype = {
     // Thermostat Service
     this.thermostatService = new Service.Thermostat(this.name);
 
-    // this.addCharacteristic(Characteristic.TargetHeatingCoolingState); READ WRITE
-
-    if (this.device.latestData.uiData.SwitchAutoAllowed) {
-      this.thermostatService
-        .getCharacteristic(Characteristic.TargetHeatingCoolingState)
-        .on('set', this.setTargetHeatingCooling.bind(this));
-    } else {
-      // don't display Auto if it isn't supported
-      this.thermostatService
-        .getCharacteristic(Characteristic.TargetHeatingCoolingState)
-        .setProps({
-          validValues: [0, 1, 2]
-        })
-        .on('set', this.setTargetHeatingCooling.bind(this));
-    }
+    this.thermostatService
+      .getCharacteristic(Characteristic.TargetHeatingCoolingState)
+      .setProps({
+        validValues: [0, 1]
+      })
+      .on('set', this.setTargetHeatingCooling.bind(this));
 
     this.thermostatService
       .getCharacteristic(Characteristic.CurrentTemperature)
@@ -398,18 +389,6 @@ Warmup4ieAccessory.prototype = {
       .getCharacteristic(Characteristic.TargetTemperature)
       .on('set', this.setTargetTemperature.bind(this));
 
-    if (this.device.latestData.uiData.SwitchAutoAllowed) {
-      // Only available on models with an Auto Mode
-      this.thermostatService
-        .getCharacteristic(Characteristic.CoolingThresholdTemperature)
-        .on('set', this.setCoolingThresholdTemperature.bind(this));
-
-      // this.addOptionalCharacteristic(Characteristic.HeatingThresholdTemperature);
-      this.thermostatService
-        .getCharacteristic(Characteristic.HeatingThresholdTemperature)
-        .on('set', this.setHeatingThresholdTemperature.bind(this));
-    }
-
     this.thermostatService.log = this.log;
     this.loggingService = new FakeGatoHistoryService("thermo", this.thermostatService, {
       storage: storage,
@@ -421,9 +400,8 @@ Warmup4ieAccessory.prototype = {
     this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramData);
 
     return [informationService, this.thermostatService, this.loggingService];
-
   }
-}
+};
 
 function roundInt(string) {
   return Math.round(parseFloat(string) * 10) / 10;
