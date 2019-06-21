@@ -72,42 +72,43 @@ warmup4iePlatform.prototype = {
         this.log("Found %s room(s)", rooms.length);
         rooms.forEach(function(room) {
           this.log("Adding", room.roomName);
-          var newAccessory = new Warmup4ieAccessory(this, room.roomName, this.thermostat.room[room.roomID]);
+          var newAccessory = new Warmup4ieAccessory(this, room.roomName, this.thermostat.room[room.roomId]);
+          // myAccessories[room.roomId] = newAccessory;
           myAccessories.push(newAccessory);
+          // debug("Room", room);
+          // updateStatus(room);
         }.bind(this));
         callback(myAccessories);
       }
+      // pollDevices.call(this);
     }.bind(this));
+
+    // setInterval(pollDevices, 60000); // Poll every minute
   }
 };
 
-function updateStatus(service, data) {
+function pollDevices() {
+  debug("pollDevices", this.thermostat);
+  this.thermostat.room.forEach(function(room) {
+    debug("Room", room);
+    updateStatus(room);
+  });
+}
+
+function updateStatus(room) {
+  debug("updateStatus %s", room.roomId, JSON.stringify(myAccessories[room.roomId], null, 4));
+  var service = myAccessories[room.roomId].getService(Service.Thermostat);
   service.getCharacteristic(Characteristic.TargetTemperature)
-    .updateValue(Number(warmup4ie.toHBTargetTemperature(data)));
+    .updateValue(Number(room.targetTemp / 10));
 
   service.getCharacteristic(Characteristic.CurrentTemperature)
-    .updateValue(Number(warmup4ie.toHBTemperature(data, data.latestData.uiData.DispTemperature)));
+    .updateValue(Number(room.currentTemp / 10));
 
-  service.getCharacteristic(Characteristic.CurrentHeatingCoolingState)
-    .updateValue(data.latestData.uiData.EquipmentOutputStatus);
+  //  service.getCharacteristic(Characteristic.CurrentHeatingCoolingState)
+  //    .updateValue(data.latestData.uiData.EquipmentOutputStatus);
 
   service.getCharacteristic(Characteristic.TargetHeatingCoolingState)
-    .updateValue(Number(warmup4ie.toHomeBridgeHeatingCoolingSystem(data.latestData.uiData.SystemSwitchPosition)));
-
-  service.getCharacteristic(Characteristic.TemperatureDisplayUnits)
-    .updateValue(Number(warmup4ie.toHBTemperatureDisplayUnits(data.latestData.uiData.DisplayUnits)));
-
-  if (data.latestData.uiData.IndoorHumiditySensorAvailable && data.latestData.uiData.IndoorHumiditySensorNotFault)
-    service.getCharacteristic(Characteristic.CurrentRelativeHumidity)
-    .updateValue(data.latestData.uiData.IndoorHumidity);
-
-  if (data.latestData.uiData.SwitchAutoAllowed) {
-    service.getCharacteristic(Characteristic.CoolingThresholdTemperature)
-      .updateValue(Number(warmup4ie.toHBTemperature(data, data.latestData.uiData.CoolSetpoint)));
-    service.getCharacteristic(Characteristic.HeatingThresholdTemperature)
-      .updateValue(Number(warmup4ie.toHBTemperature(data, data.latestData.uiData.HeatSetpoint)));
-  }
-
+    .updateValue((room.runMode === "off" ? 0 : 1));
 }
 
 warmup4iePlatform.prototype.periodicUpdate = function(t) {
@@ -184,6 +185,7 @@ Warmup4ieAccessory.prototype = {
 
   // This is to change the system switch to a different position
 
+  /*
   setTargetHeatingCooling: function(value, callback) {
     var that = this;
     if (!updating) {
@@ -282,7 +284,6 @@ Warmup4ieAccessory.prototype = {
 
       that.log("Setting cooling threshold temperature for", this.name, "to", value + "°");
 
-
       if (value < 10)
         value = 10;
 
@@ -357,9 +358,13 @@ Warmup4ieAccessory.prototype = {
     callback();
   },
 
+  */
+
   getServices: function() {
-    var that = this;
-    that.log("getServices", this.name);
+    // var that = this;
+    // this.log("getServices", this.name);
+
+    // debug("getServices", this);
     // Information Service
     var informationService = new Service.AccessoryInformation();
 
@@ -368,8 +373,20 @@ Warmup4ieAccessory.prototype = {
       .setCharacteristic(Characteristic.SerialNumber, hostname + "-" + this.name)
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version);
     // Thermostat Service
+    //
+    this.temperatureService = new Service.TemperatureSensor(this.name + " Air");
+    this.temperatureService
+      .getCharacteristic(Characteristic.CurrentTemperature)
+      .setProps({
+        minValue: this.room.minTemp / 10,
+        maxValue: this.room.maxTemp / 10
+      });
+    this.temperatureService.getCharacteristic(Characteristic.CurrentTemperature)
+      .updateValue(Number(this.room.airTemp / 10));
+
     this.thermostatService = new Service.Thermostat(this.name);
 
+    /*
     this.thermostatService
       .getCharacteristic(Characteristic.TargetHeatingCoolingState)
       .setProps({
@@ -378,16 +395,23 @@ Warmup4ieAccessory.prototype = {
       .on('set', this.setTargetHeatingCooling.bind(this));
 
     this.thermostatService
-      .getCharacteristic(Characteristic.CurrentTemperature)
+      .getCharacteristic(Characteristic.TargetTemperature)
+      .on('set', this.setTargetTemperature.bind(this));
+    */
+
+    this.thermostatService
+      .getCharacteristic(Characteristic.TargetTemperature)
       .setProps({
         minValue: -100, // If you need this, you have major problems!!!!!
         maxValue: 100
       });
 
-    // this.addCharacteristic(Characteristic.TargetTemperature); READ WRITE
     this.thermostatService
-      .getCharacteristic(Characteristic.TargetTemperature)
-      .on('set', this.setTargetTemperature.bind(this));
+      .getCharacteristic(Characteristic.CurrentTemperature)
+      .setProps({
+        minValue: this.room.minTemp / 10,
+        maxValue: this.room.maxTemp / 10
+      });
 
     this.thermostatService.log = this.log;
     this.loggingService = new FakeGatoHistoryService("thermo", this.thermostatService, {
@@ -399,7 +423,19 @@ Warmup4ieAccessory.prototype = {
     this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramCommand);
     this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramData);
 
-    return [informationService, this.thermostatService, this.loggingService];
+    this.thermostatService.getCharacteristic(Characteristic.TargetTemperature)
+      .updateValue(Number(this.room.targetTemp / 10));
+
+    this.thermostatService.getCharacteristic(Characteristic.CurrentTemperature)
+      .updateValue(Number(this.room.currentTemp / 10));
+
+    //  service.getCharacteristic(Characteristic.CurrentHeatingCoolingState)
+    //    .updateValue(data.latestData.uiData.EquipmentOutputStatus);
+
+    this.thermostatService.getCharacteristic(Characteristic.TargetHeatingCoolingState)
+      .updateValue((this.room.runMode === "off" ? 0 : 1));
+
+    return [informationService, this.thermostatService, this.temperatureService, this.loggingService];
   }
 };
 
