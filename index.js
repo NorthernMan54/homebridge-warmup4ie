@@ -75,40 +75,53 @@ warmup4iePlatform.prototype = {
           var newAccessory = new Warmup4ieAccessory(this, room.roomName, this.thermostat.room[room.roomId]);
           // myAccessories[room.roomId] = newAccessory;
           myAccessories.push(newAccessory);
-          // debug("Room", room);
-          // updateStatus(room);
+          // debug("myAccessories", myAccessories);
         }.bind(this));
         callback(myAccessories);
       }
       // pollDevices.call(this);
     }.bind(this));
 
-    // setInterval(pollDevices, 60000); // Poll every minute
+    setInterval(pollDevices.bind(this), 10000); // Poll every minute
   }
 };
 
 function pollDevices() {
-  debug("pollDevices", this.thermostat);
+  // debug("pollDevices", this.thermostat);
   this.thermostat.room.forEach(function(room) {
     debug("Room", room);
     updateStatus(room);
   });
 }
 
+function getAccessory(accessories, roomId) {
+  var value;
+  accessories.forEach(function(accessory) {
+    debug("Room", accessory.room.roomId, roomId);
+    if (accessory.room.roomId === roomId) {
+      value = accessory;
+    }
+  });
+  return value;
+}
+
 function updateStatus(room) {
-  debug("updateStatus %s", room.roomId, JSON.stringify(myAccessories[room.roomId], null, 4));
-  var service = myAccessories[room.roomId].getService(Service.Thermostat);
+  debug("updateStatus %s", room.roomId);
+  var acc = getAccessory(myAccessories, room.roomId);
+  debug("acc", acc);
+  var service = acc.getService(Service.Thermostat);
   service.getCharacteristic(Characteristic.TargetTemperature)
     .updateValue(Number(room.targetTemp / 10));
 
   service.getCharacteristic(Characteristic.CurrentTemperature)
     .updateValue(Number(room.currentTemp / 10));
 
-  //  service.getCharacteristic(Characteristic.CurrentHeatingCoolingState)
-  //    .updateValue(data.latestData.uiData.EquipmentOutputStatus);
-
   service.getCharacteristic(Characteristic.TargetHeatingCoolingState)
     .updateValue((room.runMode === "off" ? 0 : 1));
+
+  service = getAccessory(myAccessories, room.roomId).getService(Service.TemperatureService);
+  service.getCharacteristic(Characteristic.CurrentTemperature)
+    .updateValue(Number(this.room.airTemp / 10));
 }
 
 warmup4iePlatform.prototype.periodicUpdate = function(t) {
@@ -386,12 +399,13 @@ Warmup4ieAccessory.prototype = {
 
     this.thermostatService = new Service.Thermostat(this.name);
 
-    /*
     this.thermostatService
       .getCharacteristic(Characteristic.TargetHeatingCoolingState)
       .setProps({
         validValues: [0, 1]
-      })
+      });
+
+      /*
       .on('set', this.setTargetHeatingCooling.bind(this));
 
     this.thermostatService
