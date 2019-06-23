@@ -27,23 +27,20 @@
 'use strict';
 
 var debug = require('debug')('warmup4ie');
-var Service, Characteristic, UUIDGen, FakeGatoHistoryService, CustomCharacteristic;
+var Service, Characteristic, FakeGatoHistoryService, CustomCharacteristic;
 var os = require("os");
 var hostname = os.hostname();
 var Warmup4ie = require('./lib/warmup4ie.js').Warmup4IE;
 const moment = require('moment');
 
 var myAccessories = [];
-var refresh, storage;
+var storage, thermostats;
 
 module.exports = function(homebridge) {
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
-  UUIDGen = homebridge.hap.uuid;
   CustomCharacteristic = require('./lib/CustomCharacteristic.js')(homebridge);
   FakeGatoHistoryService = require('fakegato-history')(homebridge);
-
-  // warmup4ie.setCharacteristic(Characteristic);
 
   homebridge.registerPlatform("homebridge-warmup4ie", "warmup4ie", warmup4iePlatform);
 };
@@ -53,7 +50,6 @@ function warmup4iePlatform(log, config, api) {
   this.password = config['password'];
   this.refresh = config['refresh'] || 60; // Update every minute
   this.log = log;
-  // this.devices = config['devices'];
   storage = config['storage'] || "fs";
 }
 
@@ -61,12 +57,12 @@ warmup4iePlatform.prototype = {
   accessories: function(callback) {
     this.log("Logging into warmup4ie...");
     // debug("Rooms", this);
-    this.thermostat = new Warmup4ie(this, function(err, rooms) {
+    thermostats = new Warmup4ie(this, function(err, rooms) {
       if (!err) {
         this.log("Found %s room(s)", rooms.length);
         rooms.forEach(function(room) {
           this.log("Adding", room.roomName);
-          var newAccessory = new Warmup4ieAccessory(this, room.roomName, this.thermostat.room[room.roomId]);
+          var newAccessory = new Warmup4ieAccessory(this, room.roomName, thermostats.room[room.roomId]);
           // myAccessories[room.roomId] = newAccessory;
           myAccessories.push(newAccessory);
           // debug("myAccessories", myAccessories);
@@ -81,10 +77,12 @@ warmup4iePlatform.prototype = {
 };
 
 function pollDevices() {
-  // debug("pollDevices", this.thermostat);
-  this.thermostat.room.forEach(function(room) {
+  // debug("pollDevices", thermostats);
+  thermostats.room.forEach(function(room) {
     // debug("Room", room);
-    updateStatus(room);
+    if (room) {
+      updateStatus(room);
+    }
   });
 }
 
@@ -104,14 +102,51 @@ function updateStatus(room) {
   var acc = getAccessory(myAccessories, room.roomId);
   // debug("acc", acc);
   var service = acc.thermostatService;
+
+  var targetTemperature = (room.targetTemp > room.minTemp ? room.targetTemp : room.minTemp);
   service.getCharacteristic(Characteristic.TargetTemperature)
-    .updateValue(Number(room.targetTemp / 10));
+    .updateValue(Number(targetTemperature / 10));
 
   service.getCharacteristic(Characteristic.CurrentTemperature)
     .updateValue(Number(room.currentTemp / 10));
 
+  var currentHeatingCoolingState;
+  switch (room.runMode) {
+    case "off":
+      currentHeatingCoolingState = 0;
+      break;
+    default:
+    case "fixed": // Heat
+    case "override": // Heat
+    case "schedule":
+      if (room.currentTemp < room.targetTemp) {
+        currentHeatingCoolingState = 1;
+      } else {
+        currentHeatingCoolingState = 0;
+      }
+      break;
+  }
+
+  service.getCharacteristic(Characteristic.CurrentHeatingCoolingState)
+    .updateValue(currentHeatingCoolingState);
+
+  var targetHeatingCoolingState;
+  switch (room.runMode) {
+    case "off":
+      targetHeatingCoolingState = 0;
+      break;
+    default:
+    case "fixed": // Heat
+    case "override": // Heat
+      targetHeatingCoolingState = 1;
+      break;
+    case "schedule":
+      targetHeatingCoolingState = 3;
+      break;
+  }
+
   service.getCharacteristic(Characteristic.TargetHeatingCoolingState)
-    .updateValue((room.runMode === "off" ? 0 : 1));
+    .updateValue(targetHeatingCoolingState);
 
   acc.log_event_counter++;
   if (!(acc.log_event_counter % 10)) {
@@ -140,45 +175,32 @@ function Warmup4ieAccessory(that, name, room) {
   this.room = room;
   this.log_event_counter = 0;
   this.roomId = room.roomId;
-
-  // this.thermostat = new warmup4ie(this, );
 }
 
 Warmup4ieAccessory.prototype = {
 
-  // This is to change the system switch to a different position
-
-  /*
   setTargetHeatingCooling: function(value, callback) {
-    var that = this;
-    if (!updating) {
-      updating = true;
-
-      that.log("Setting system switch for", this.name, "to", value);
-      // TODO:
-      // verify that the task did succeed
-
-      warmup4ie.login(this.username, this.password).then(function(session) {
-        session.setSystemSwitch(that.deviceID, warmup4ie.towarmup4ieHeadingCoolingSystem(value)).then(function(taskId) {
-          that.log("Successfully changed system!");
-          that.log(taskId);
-          updateValues(that);
-          callback(null, Number(1));
-        });
-      }).fail(function(err) {
-        that.log('warmup4ie Failed:', err);
-        callback(null, Number(0));
-      });
-      callback(null, Number(0));
-      updating = false
+    this.log("Setting system switch for", this.name, "to", value);
+    switch (value) {
+      case 0: // Off
+        thermostats.setRoomOff(this.roomId, callback);
+        break;
+      case 1: // Heat
+        if (this.room.runMode === "fixed" || this.room.runMode === "override") {
+          callback(null);
+        } else {
+          thermostats.setRoomAuto(this.roomId, callback);
+        }
+        break;
+      case 3: // Auto
+        thermostats.setRoomAuto(this.roomId, callback);
+        break;
     }
   },
 
-  */
   setTargetTemperature: function(value, callback) {
     this.log("Setting target temperature for", this.name, "to", value + "°");
-    debug("This", this);
-    this.thermostat.setTargetTemperature(this.roomId, value, callback);
+    thermostats.setTargetTemperature(this.roomId, value, callback);
   },
 
   /*
@@ -285,8 +307,8 @@ Warmup4ieAccessory.prototype = {
     this.temperatureService
       .getCharacteristic(Characteristic.CurrentTemperature)
       .setProps({
-        minValue: this.room.minTemp / 10,
-        maxValue: this.room.maxTemp / 10
+        minValue: -100,
+        maxValue: 100
       });
     this.temperatureService.getCharacteristic(Characteristic.CurrentTemperature)
       .updateValue(Number(this.room.airTemp / 10));
@@ -296,12 +318,12 @@ Warmup4ieAccessory.prototype = {
     this.thermostatService
       .getCharacteristic(Characteristic.TargetHeatingCoolingState)
       .setProps({
-        validValues: [0, 1]
+        validValues: [0, 1, 3]
       });
 
-//    this.thermostatService
-//      .getCharacteristic(Characteristic.TargetHeatingCoolingState)
-//      .on('set', this.setTargetHeatingCooling.bind(this));
+    this.thermostatService
+      .getCharacteristic(Characteristic.TargetHeatingCoolingState)
+      .on('set', this.setTargetHeatingCooling.bind(this));
 
     this.thermostatService
       .getCharacteristic(Characteristic.TargetTemperature)
@@ -310,38 +332,71 @@ Warmup4ieAccessory.prototype = {
     this.thermostatService
       .getCharacteristic(Characteristic.TargetTemperature)
       .setProps({
-        minValue: -100, // If you need this, you have major problems!!!!!
-        maxValue: 100
+        minValue: this.room.minTemp / 10,
+        maxValue: this.room.maxTemp / 10
       });
 
     this.thermostatService
       .getCharacteristic(Characteristic.CurrentTemperature)
       .setProps({
-        minValue: this.room.minTemp / 10,
-        maxValue: this.room.maxTemp / 10
+        minValue: -100,
+        maxValue: 100
       });
 
     this.thermostatService.log = this.log;
     this.loggingService = new FakeGatoHistoryService("thermo", this.thermostatService, {
       storage: storage,
-      minutes: refresh * 10 / 60
+      minutes: this.refresh * 10 / 60
     });
 
     this.thermostatService.addCharacteristic(CustomCharacteristic.ValvePosition);
     this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramCommand);
     this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramData);
 
+    var targetTemperature = (this.room.targetTemp > this.room.minTemp ? this.room.targetTemp : this.room.minTemp);
     this.thermostatService.getCharacteristic(Characteristic.TargetTemperature)
-      .updateValue(Number(this.room.targetTemp / 10));
+      .updateValue(Number(targetTemperature / 10));
 
     this.thermostatService.getCharacteristic(Characteristic.CurrentTemperature)
       .updateValue(Number(this.room.currentTemp / 10));
 
-    //  service.getCharacteristic(Characteristic.CurrentHeatingCoolingState)
-    //    .updateValue(data.latestData.uiData.EquipmentOutputStatus);
+    var currentHeatingCoolingState;
+    switch (this.room.runMode) {
+      case "off":
+        currentHeatingCoolingState = 0;
+        break;
+      default:
+      case "fixed": // Heat
+      case "override": // Heat
+      case "schedule":
+        if (this.room.currentTemp < this.room.targetTemp) {
+          currentHeatingCoolingState = 1;
+        } else {
+          currentHeatingCoolingState = 0;
+        }
+        break;
+    }
+
+    this.thermostatService.getCharacteristic(Characteristic.CurrentHeatingCoolingState)
+      .updateValue(currentHeatingCoolingState);
+
+    var targetHeatingCoolingState;
+    switch (this.room.runMode) {
+      case "off":
+        targetHeatingCoolingState = 0;
+        break;
+      default:
+      case "fixed": // Heat
+      case "override": // Heat
+        targetHeatingCoolingState = 1;
+        break;
+      case "schedule":
+        targetHeatingCoolingState = 3;
+        break;
+    }
 
     this.thermostatService.getCharacteristic(Characteristic.TargetHeatingCoolingState)
-      .updateValue((this.room.runMode === "off" ? 0 : 1));
+      .updateValue(targetHeatingCoolingState);
 
     return [informationService, this.thermostatService, this.temperatureService, this.loggingService];
   }
