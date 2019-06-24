@@ -4,6 +4,21 @@ Homebridge plugin for the WarmUP 4iE thermostat.
 
 Plugin works with program mode only, and changes to the temperature are treated as an override.  Fixed temperature mode is not supported.  
 
+# Table of Contents
+
+<!--ts-->
+   * [homebridge-warmup4ie](#homebridge-warmup4ie)
+   * [Table of Contents](#table-of-contents)
+   * [Temperature Control](#temperature-control)
+   * [Mode Setting](#mode-setting)
+   * [Settings](#settings)
+      * [Required settings](#required-settings)
+      * [Optional settings](#optional-settings)
+
+<!-- Added by: sgracey, at:  -->
+
+<!--te-->
+
 # Temperature Control
 
 Changes to the temperature create a temperature override for the current setting.  Length of the override defaults to 60 Minutes ( or the duration setting).  
