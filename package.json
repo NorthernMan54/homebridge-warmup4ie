@@ -1,6 +1,6 @@
 {
   "name": "homebridge-warmup4ie",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Warmup4IE Thermostat Plugin Homebridge",
   "main": "index.js",
   "scripts": {
