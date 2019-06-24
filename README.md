@@ -22,6 +22,8 @@ Plugin works with program mode only, and changes to the temperature are treated 
 
 # Using the plugin
 
+Thermostats are retrieved from the my.warmup.com site, and are automatically created in the Home App.
+
 ## Temperature Control
 
 Changes to the temperature create a temperature override for the current setting.  Length of the override defaults to 60 Minutes ( or the duration setting).  
