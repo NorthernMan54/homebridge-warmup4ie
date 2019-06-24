@@ -21,6 +21,7 @@ Plugin works with program mode only, and changes to the temperature are treated 
 <!--te-->
 
 # Using the plugin
+
 ## Temperature Control
 
 Changes to the temperature create a temperature override for the current setting.  Length of the override defaults to 60 Minutes ( or the duration setting).  
