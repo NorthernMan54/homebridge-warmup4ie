@@ -9,8 +9,9 @@ Plugin works with program mode only, and changes to the temperature are treated 
 <!--ts-->
    * [homebridge-warmup4ie](#homebridge-warmup4ie)
    * [Table of Contents](#table-of-contents)
-   * [Temperature Control](#temperature-control)
-   * [Mode Setting](#mode-setting)
+   * [Using the plugin](#using-the-plugin)
+      * [Temperature Control](#temperature-control)
+      * [Mode Setting](#mode-setting)
    * [Settings](#settings)
       * [Required settings](#required-settings)
       * [Optional settings](#optional-settings)
@@ -19,11 +20,12 @@ Plugin works with program mode only, and changes to the temperature are treated 
 
 <!--te-->
 
-# Temperature Control
+# Using the plugin
+## Temperature Control
 
 Changes to the temperature create a temperature override for the current setting.  Length of the override defaults to 60 Minutes ( or the duration setting).  
 
-# Mode Setting
+## Mode Setting
 
 `Off` - Turns off the thermostat
 `Heat` - Turns on the thermostat and resumes current program
