@@ -49,6 +49,7 @@ function warmup4iePlatform(log, config, api) {
   this.username = config['username'];
   this.password = config['password'];
   this.refresh = config['refresh'] || 60; // Update every minute
+  this.duration = config['duration'] || 60; // duration in minutes
   this.log = log;
   storage = config['storage'] || "fs";
 }
@@ -98,7 +99,7 @@ function getAccessory(accessories, roomId) {
 }
 
 function updateStatus(room) {
-  debug("updateStatus %s", room.roomId);
+  // debug("updateStatus %s", room.roomId);
   var acc = getAccessory(myAccessories, room.roomId);
   // debug("acc", acc);
   var service = acc.thermostatService;
