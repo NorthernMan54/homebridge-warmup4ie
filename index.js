@@ -315,6 +315,7 @@ Warmup4ieAccessory.prototype = {
       .updateValue(Number(this.room.airTemp / 10));
 
     this.thermostatService = new Service.Thermostat(this.name);
+    this.thermostatService.isPrimaryService = true;
 
     this.thermostatService
       .getCharacteristic(Characteristic.TargetHeatingCoolingState)
@@ -392,7 +393,7 @@ Warmup4ieAccessory.prototype = {
         targetHeatingCoolingState = 1;
         break;
       case "schedule":
-        targetHeatingCoolingState = 3;
+        targetHeatingCoolingState = 1;
         break;
     }
 
