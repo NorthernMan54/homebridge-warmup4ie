@@ -1,17 +1,15 @@
-# homebridge-warmup4ie
+# homebridge-connex
 
-Homebridge plugin for the WarmUP 4iE thermostat.
-
-Plugin works with program mode only, and changes to the temperature are treated as an override.  Fixed temperature mode is not supported.  
+Homebridge plugin for the Connex Dimplex WiFi thermostat
 
 # Table of Contents
 
 <!--ts-->
-   * [homebridge-warmup4ie](#homebridge-warmup4ie)
+   * [homebridge-connex](#homebridge-connex)
    * [Table of Contents](#table-of-contents)
    * [Using the plugin](#using-the-plugin)
       * [Temperature Control](#temperature-control)
-      * [Mode Setting](#mode-setting)
+      * [Mode Setting - Not supported](#mode-setting---not-supported)
    * [Settings](#settings)
       * [Required settings](#required-settings)
       * [Optional settings](#optional-settings)
@@ -22,13 +20,13 @@ Plugin works with program mode only, and changes to the temperature are treated 
 
 # Using the plugin
 
-Thermostats are retrieved from the my.warmup.com site, and are automatically created in the Home App.
+Thermostats are retrieved from the Connex Dimplex site, and are automatically created in the Home App.
 
 ## Temperature Control
 
-Changes to the temperature create a temperature override for the current setting.  Length of the override defaults to 60 Minutes ( or the duration setting).  
 
-## Mode Setting
+
+## Mode Setting - Not supported
 
 `Off` - Turns off the thermostat
 `Heat` - Turns on the thermostat and resumes current program
@@ -40,8 +38,7 @@ When the thermostat is in temperature override mode, the Mode setting is set to 
 
 ```
 "platforms": [{
-  "platform": "warmup4ie",
-  "name": "WarmUP",
+  "platform": "connex",
   "username": "XXXXXXXXXXXX",
   "password": "XXXXXXXXXXXX"
 }]
@@ -49,11 +46,9 @@ When the thermostat is in temperature override mode, the Mode setting is set to 
 
 ## Required settings
 
-* `username` - Your My.Warmup.com email address / login
-* `password` - Your My.Warmup.com password
+* `username` - Your Dimplex Connex email address / login
+* `password` - Your Dimplex Connex password
 
 ## Optional settings
 
 * `refresh` - Data polling interval in seconds, defaults to 60 seconds
-* `storage` - Storage of chart graphing data for history graphing, either fs or googleDrive, defaults to fs
-* `duration` - Duration of temperature override, defaults to 60 minutes
