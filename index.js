@@ -1,10 +1,36 @@
+// This platform integrates Honeywell warmup4ie into homebridge
+// As I only own single thermostat, so this only works with one, but it is
+// conceivable to handle mulitple with additional coding.
+//
+// The configuration is stored inside the ../config.json
+// {
+//     "platform": "warmup4ie",
+//     "name":     "Thermostat",
+//     "username" : "username/email",
+//     "password" : "password",
+//     "debug" : "True",      - Optional
+//     "refresh": "60",       - Optional
+//     "devices" : [
+//        { "location": "123456789", "name" : "Main Floor Thermostat" },
+//        { "deviceID": "123456789", "name" : "Upper Floor Thermostat" }
+//     ]
+// }
+//
+//     name: YOUR_DESCRIPTION
+//    username: YOUR_E_MAIL_ADDRESS
+//    password: YOUR_PASSWORD
+//    location: YOUR_LOCATION_NAME
+//    room: YOUR_ROOM_NAME
+//
+
+/*jslint node: true */
 'use strict';
 
-var debug = require('debug')('connex');
+var debug = require('debug')('warmup4ie');
 var Service, Characteristic, FakeGatoHistoryService, CustomCharacteristic;
 var os = require("os");
 var hostname = os.hostname();
-var connex = require('./lib/connex.js').connex;
+var Warmup4ie = require('./lib/warmup4ie.js').Warmup4IE;
 const moment = require('moment');
 
 var myAccessories = [];
@@ -16,10 +42,10 @@ module.exports = function(homebridge) {
   CustomCharacteristic = require('./lib/CustomCharacteristic.js')(homebridge);
   FakeGatoHistoryService = require('fakegato-history')(homebridge);
 
-  homebridge.registerPlatform("homebridge-connex", "connex", connexPlatform);
+  homebridge.registerPlatform("homebridge-warmup4ie", "warmup4ie", warmup4iePlatform);
 };
 
-function connexPlatform(log, config, api) {
+function warmup4iePlatform(log, config, api) {
   this.username = config['username'];
   this.password = config['password'];
   this.refresh = config['refresh'] || 60; // Update every minute
@@ -28,16 +54,16 @@ function connexPlatform(log, config, api) {
   storage = config['storage'] || "fs";
 }
 
-connexPlatform.prototype = {
+warmup4iePlatform.prototype = {
   accessories: function(callback) {
-    this.log("Logging into connex...");
+    this.log("Logging into warmup4ie...");
     // debug("Rooms", this);
-    thermostats = new connex(this, function(err, rooms) {
+    thermostats = new Warmup4ie(this, function(err, rooms) {
       if (!err) {
         this.log("Found %s room(s)", rooms.length);
         rooms.forEach(function(room) {
           this.log("Adding", room.roomName);
-          var newAccessory = new connexAccessory(this, room.roomName, thermostats.room[room.roomId]);
+          var newAccessory = new Warmup4ieAccessory(this, room.roomName, thermostats.room[room.roomId]);
           // myAccessories[room.roomId] = newAccessory;
           myAccessories.push(newAccessory);
           // debug("myAccessories", myAccessories);
@@ -141,9 +167,9 @@ function updateStatus(room) {
 
 // give this function all the parameters needed
 
-function connexAccessory(that, name, room) {
+function Warmup4ieAccessory(that, name, room) {
   this.log = that.log;
-  this.log("Adding connex Device", name);
+  this.log("Adding warmup4ie Device", name);
   this.name = name;
   this.username = that.username;
   this.password = that.password;
@@ -152,7 +178,7 @@ function connexAccessory(that, name, room) {
   this.roomId = room.roomId;
 }
 
-connexAccessory.prototype = {
+Warmup4ieAccessory.prototype = {
 
   setTargetHeatingCooling: function(value, callback) {
     this.log("Setting system switch for", this.name, "to", value);
@@ -195,11 +221,11 @@ connexAccessory.prototype = {
       if (value > 38)
         value = 38;
 
-      value = connex.toconnexTemperature(that, value);
+      value = warmup4ie.towarmup4ieTemperature(that, value);
       // TODO:
       // verify that the task did succeed
 
-      connex.login(this.username, this.password).then(function(session) {
+      warmup4ie.login(this.username, this.password).then(function(session) {
         session.setHeatCoolSetpoint(that.deviceID, null, value, that.usePermanentHolds).then(function(taskId) {
           that.log("Successfully changed cooling threshold!");
           that.log(taskId);
@@ -209,7 +235,7 @@ connexAccessory.prototype = {
           callback(null, Number(1));
         });
       }).fail(function(err) {
-        that.log('connex Failed:', err);
+        that.log('warmup4ie Failed:', err);
         callback(null, Number(0));
       });
       callback(null, Number(0));
@@ -233,11 +259,11 @@ connexAccessory.prototype = {
       if (value > 38)
         value = 38;
 
-      value = connex.toconnexTemperature(that, value);
+      value = warmup4ie.towarmup4ieTemperature(that, value);
       // TODO:
       // verify that the task did succeed
 
-      connex.login(this.username, this.password).then(function(session) {
+      warmup4ie.login(this.username, this.password).then(function(session) {
         session.setHeatCoolSetpoint(that.deviceID, value, null).then(function(taskId) {
           that.log("Successfully changed heating threshold!");
           that.log(taskId);
@@ -247,7 +273,7 @@ connexAccessory.prototype = {
           callback(null, Number(1));
         });
       }).fail(function(err) {
-        that.log('connex Failed:', err);
+        that.log('warmup4ie Failed:', err);
         callback(null, Number(0));
       });
       callback(null, Number(0));
@@ -273,7 +299,7 @@ connexAccessory.prototype = {
     var informationService = new Service.AccessoryInformation();
 
     informationService
-      .setCharacteristic(Characteristic.Manufacturer, "connex")
+      .setCharacteristic(Characteristic.Manufacturer, "warmup4ie")
       .setCharacteristic(Characteristic.SerialNumber, hostname + "-" + this.name)
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version);
     // Thermostat Service
