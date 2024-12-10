@@ -27,19 +27,20 @@
 'use strict';
 
 var debug = require('debug')('warmup4ie');
-var Service, Characteristic, FakeGatoHistoryService, CustomCharacteristic;
+var Service, Characteristic, FakeGatoHistoryService, CustomCharacteristics;
 var os = require("os");
 var hostname = os.hostname();
 var Warmup4ie = require('./lib/warmup4ie.js').Warmup4IE;
 const moment = require('moment');
+var homebridgeLib = require('homebridge-lib');
 
 var myAccessories = [];
 var storage, thermostats;
 
-module.exports = function(homebridge) {
+module.exports = function (homebridge) {
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
-  CustomCharacteristic = require('./lib/CustomCharacteristic.js')(homebridge);
+  CustomCharacteristics = new homebridgeLib.EveHomeKitTypes(homebridge).Characteristics;
   FakeGatoHistoryService = require('fakegato-history')(homebridge);
 
   homebridge.registerPlatform("homebridge-warmup4ie", "warmup4ie", warmup4iePlatform);
@@ -55,13 +56,13 @@ function warmup4iePlatform(log, config, api) {
 }
 
 warmup4iePlatform.prototype = {
-  accessories: function(callback) {
+  accessories: function (callback) {
     this.log("Logging into warmup4ie...");
     // debug("Rooms", this);
-    thermostats = new Warmup4ie(this, function(err, rooms) {
+    thermostats = new Warmup4ie(this, function (err, rooms) {
       if (!err) {
         this.log("Found %s room(s)", rooms.length);
-        rooms.forEach(function(room) {
+        rooms.forEach(function (room) {
           this.log("Adding", room.roomName);
           var newAccessory = new Warmup4ieAccessory(this, room.roomName, thermostats.room[room.roomId]);
           // myAccessories[room.roomId] = newAccessory;
@@ -79,7 +80,7 @@ warmup4iePlatform.prototype = {
 
 function pollDevices() {
   // debug("pollDevices", thermostats);
-  thermostats.room.forEach(function(room) {
+  thermostats.room.forEach(function (room) {
     // debug("Room", room);
     if (room) {
       updateStatus(room);
@@ -89,7 +90,7 @@ function pollDevices() {
 
 function getAccessory(accessories, roomId) {
   var value;
-  accessories.forEach(function(accessory) {
+  accessories.forEach(function (accessory) {
     // debug("Room", accessory.room.roomId, roomId);
     if (accessory.room.roomId === roomId) {
       value = accessory;
@@ -180,7 +181,7 @@ function Warmup4ieAccessory(that, name, room) {
 
 Warmup4ieAccessory.prototype = {
 
-  setTargetHeatingCooling: function(value, callback) {
+  setTargetHeatingCooling: function (value, callback) {
     this.log("Setting system switch for", this.name, "to", value);
     switch (value) {
       case 0: // Off
@@ -199,7 +200,7 @@ Warmup4ieAccessory.prototype = {
     }
   },
 
-  setTargetTemperature: function(value, callback) {
+  setTargetTemperature: function (value, callback) {
     this.log("Setting target temperature for", this.name, "to", value + "°");
     thermostats.setTargetTemperature(this.roomId, value, callback);
   },
@@ -290,7 +291,7 @@ Warmup4ieAccessory.prototype = {
 
   */
 
-  getServices: function() {
+  getServices: function () {
     // var that = this;
     // this.log("getServices", this.name);
 
@@ -301,7 +302,7 @@ Warmup4ieAccessory.prototype = {
     informationService
       .setCharacteristic(Characteristic.Manufacturer, "warmup4ie")
       .setCharacteristic(Characteristic.SerialNumber, hostname + "-" + this.name)
-      .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version);
+      .setCharacteristic(Characteristic.FirmwareRevision, require('../package.json').version);
     // Thermostat Service
     //
     this.temperatureService = new Service.TemperatureSensor(this.name + " Air");
@@ -351,9 +352,9 @@ Warmup4ieAccessory.prototype = {
       minutes: this.refresh * 10 / 60
     });
 
-    this.thermostatService.addCharacteristic(CustomCharacteristic.ValvePosition);
-    this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramCommand);
-    this.thermostatService.addCharacteristic(CustomCharacteristic.ProgramData);
+    this.thermostatService.addCharacteristic(CustomCharacteristics.ValvePosition);
+    this.thermostatService.addCharacteristic(CustomCharacteristics.ProgramCommand);
+    this.thermostatService.addCharacteristic(CustomCharacteristics.ProgramData);
 
     var targetTemperature = (this.room.targetTemp > this.room.minTemp ? this.room.targetTemp : this.room.minTemp);
     this.thermostatService.getCharacteristic(Characteristic.TargetTemperature)
