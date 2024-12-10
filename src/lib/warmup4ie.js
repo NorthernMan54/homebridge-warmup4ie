@@ -79,9 +79,9 @@ function Warmup4IE(options, callback) {
 
   // debug("Setting up Warmup4IE component", this);
   this.setup_finished = false;
-  _generate_access_token.call(this, function() {
-    _getLocations.call(this, function(err, locations) {
-      _getRooms.call(this, function(err, rooms) {
+  _generate_access_token.call(this, function () {
+    _getLocations.call(this, function (err, locations) {
+      _getRooms.call(this, function (err, rooms) {
         callback(null, rooms);
       })
     }.bind(this));
@@ -92,62 +92,9 @@ function Warmup4IE(options, callback) {
 
 function pollDevices() {
   // debug("Poll");
-  _getRooms.call(this, function(err, rooms) {
+  _getRooms.call(this, function (err, rooms) {
   });
 }
-
-/*
-function get_run_mode(self) {
-  // return current mode, e.g. 'off', 'fixed', 'prog'.
-  if (!this._room) {
-    return 'off'
-  }
-  return this.RUN_MODE[this._room['runModeInt']]
-}
-
-function update_room(self) {
-  // Update room/device data for the given room name.
-
-  //
-  // make sure the location is already configured
-  if (!this.LocId || !WarmupAccessToken || !this._room_name) {
-    return false
-  }
-
-  body = {
-    "query": "query QUERY{ user{ currentLocation: location { id name rooms{ id roomName runModeInt targetTemp currentTemp thermostat4ies {minTemp maxTemp}}  }}  } "
-  }
-  header_with_token = this.HEADER.copy()
-  header_with_token['warmup-authorization'] = str(WarmupAccessToken)
-  response = requests.post(url = this.URL, headers = header_with_token, json = body)
-  // check if request was acceppted and if request was successful
-  if (response.status_code != 200 || response.json()['status'] != 'success') {
-    debug("updating new room failed, %s", response);
-    return false
-  }
-  // extract and store roomId for later use
-  rooms = response.json()['data']['user']['currentLocation']['rooms']
-  room_updated = false
-  for room in rooms:
-    if room['roomName'] == this._room_name:
-    this._room = room
-  debug("Successfully updated data for room '%s' "
-    "with ID %s", this._room['roomName'],
-    this._room['id']);
-  room_updated = true
-  break
-  if not room_updated:
-    return false
-  // update temperatures values
-  this._target_temperature = int(this._room['targetTemp']) / 10
-  this._target_temperature_low = int(this._room['thermostat4ies'][0]['minTemp']) / 10
-  this._target_temperature_high = int(this._room['thermostat4ies'][0]['maxTemp']) / 10
-  this._current_temperature = int(this._room['currentTemp']) / 10
-  return true ''
-  '
-}
-
-*/
 
 function _getRooms(callback) {
   // Update room/device data for the given room name.
@@ -179,7 +126,7 @@ function _getRooms(callback) {
     strictSSL: false,
     headers: HEADER,
     body: JSON.stringify(body)
-  }, function(err, response) {
+  }, function (err, response) {
     if (err || response.statusCode !== 200 || response.statusMessage !== "OK") {
       if (err) {
         console.error("Error: _getRooms", err);
@@ -204,7 +151,7 @@ function _getRooms(callback) {
         debug("_getRooms", json.response.rooms);
         if (json.response.rooms) {
           var rooms = json.response.rooms;
-          rooms.forEach(function(room) {
+          rooms.forEach(function (room) {
             // debug("diff %s = ", room.roomId, JSON.stringify(diff(this.room[room.roomId], room)));
             this.room[room.roomId] = room;
           }.bind(this));
@@ -217,56 +164,8 @@ function _getRooms(callback) {
     }
   }.bind(this));
 
-  /*
-  response = requests.post(url = this.TOKEN_URL, headers = this.HEADER, json = body)
-  // check if request was acceppted and if request was successful
-  if response.status_code != 200 or\
-  response.json()['status']['result'] != 'success':
-    debug("updating room failed, %s", response);
-  return false
-  // extract and store roomId for later use
-  rooms = response.json()['response']['rooms']
-  room_updated = false
-  for room in rooms:
-    if room['roomName'] == this._room_name:
-    this._room = room
-  debug("Successfully updated data for room '%s' "
-    "with ID %s", this._room['roomName'],
-    this._room['roomId'])
-  room_updated = true
-  break
-  if not room_updated:
-    return false
-  // update temperatures values
-  this._target_temperature = int(this._room['targetTemp']) / 10
-  this._target_temperature_low = int(this._room['minTemp']) / 10
-  this._target_temperature_high = int(this._room['maxTemp']) / 10
-  this._current_temperature = int(this._room['currentTemp']) / 10
-  return true ''
-  '
-*/
-}
-/*
-function get_target_temmperature(self) {
-  // return target temperature
-  return this._target_temperature
-}
 
-function get_current_temmperature(self) {
-  // return currrent temperature
-  return this._current_temperature
 }
-
-function get_target_temperature_low(self) {
-  // return minimum temperature
-  return this._target_temperature_low
-}
-
-function get_target_temperature_high(self) {
-  // return maximum temperature
-  return this._target_temperature_high
-}
-*/
 function _generate_access_token(callback) {
   // retrieve access token from server
   // debug("_generate_access_token", this);
@@ -287,7 +186,7 @@ function _generate_access_token(callback) {
     strictSSL: false,
     headers: HEADER,
     body: JSON.stringify(body)
-  }, function(err, response) {
+  }, function (err, response) {
     if (err || response.statusCode !== 200 || response.statusMessage !== "OK") {
       if (err) {
         console.error("Error: _generate_access_token", err);
@@ -315,18 +214,6 @@ function _generate_access_token(callback) {
       }
     }
   });
-
-  /*
-  response = requests.post(url = this.TOKEN_URL, headers = this.HEADER, json = body)
-  // check if request was acceppted and if request was successful
-  if response.status_code != 200 or\
-  response.json()['status']['result'] != 'success':
-    debug("generating AccessToken failed, %s", response)
-  return false
-  // extract and store access token for later use
-  WarmupAccessToken = response.json()['response']['token']
-  return true
-  */
 }
 
 function _getLocations(callback) {
@@ -354,7 +241,7 @@ function _getLocations(callback) {
     strictSSL: false,
     headers: HEADER,
     body: JSON.stringify(body)
-  }, function(err, response) {
+  }, function (err, response) {
     if (err || response.statusCode !== 200 || response.statusMessage !== "OK") {
       if (err) {
         console.error("Error: _generate_access_token", err);
@@ -382,46 +269,9 @@ function _getLocations(callback) {
       }
     }
   });
-  /*
-  response = requests.post(url = this.TOKEN_URL, headers = this.HEADER, json = body)
-  // check if request was acceppted and if request was successful
-  if response.status_code != 200 or\
-  response.json()['status']['result'] != 'success':
-    debug("initialising failed, %s", response)
-  return false
-  // extract and store locationId for later use
-  locations = response.json()['response']['locations']
-  for loc in locations:
-    if loc['name'] == this._location_name:
-    this.LocId = loc['id']
-  debug(
-    "Successfully fetched location ID %s for location '%s'",
-    this.LocId, this._location_name)
-  break
-  if this.LocId is null:
-    return false
-  return true
-  */
 }
 
-/*
-var body = {
-  "account": {
-    "email": this._username,
-    "token": WarmupAccessToken
-  },
-  "request": {
-    "method": "setProgramme",
-    "roomId": roomId,
-    "roomMode": "fixed",
-    "fixed": {
-      "fixedTemp": parseInt(value * 10)
-    }
-  }
-};
-*/
-
-Warmup4IE.prototype.setTargetTemperature = function(roomId, value, callback) {
+Warmup4IE.prototype.setTargetTemperature = function (roomId, value, callback) {
   // method: "setOverride", rooms: ["$device.deviceNetworkId"], type: 3, temp: getBoostTempValue(), until: getBoostEndTime()
   var oldDateObj = new Date();
   var today = new Date(oldDateObj.getTime() + this._duration * 60000);
@@ -449,7 +299,7 @@ Warmup4IE.prototype.setTargetTemperature = function(roomId, value, callback) {
     strictSSL: false,
     headers: HEADER,
     body: JSON.stringify(body)
-  }, function(err, response) {
+  }, function (err, response) {
     if (err || response.statusCode !== 200 || response.statusMessage !== "OK") {
       if (err) {
         console.error("Error: setTargetTemperature", err);
@@ -477,30 +327,10 @@ Warmup4IE.prototype.setTargetTemperature = function(roomId, value, callback) {
       }
     }
   });
-
-  /*
-  response = requests.post(url = this.TOKEN_URL, headers = this.HEADER, json = body)
-  // check if request was acceppted and if request was successful
-  if response.status_code != 200 or\
-  response.json()['status']['result'] != 'success':
-    debug(
-      "Setting new target temperature failed, %s", response)
-  return
-  response_temp = response.json()["message"]["targetTemp"]
-  if new_temperature != int(response_temp) / 10:
-    debug("Server declined to set new target temperature "
-      "to %.1f°C; response from server: '%s'",
-      new_temperature, response.text)
-  return
-  this._target_temperature = new_temperature
-  debug("Successfully set new target temperature to %.1f°C; "
-    "response from server: '%s'",
-    this._target_temperature, response.text)
-  */
 };
 
 
-Warmup4IE.prototype.setRoomAuto = function(roomId, callback) {
+Warmup4IE.prototype.setRoomAuto = function (roomId, callback) {
   // set device to automatic mode
   // make sure the room/device is already configured
   var body = {
@@ -523,7 +353,7 @@ Warmup4IE.prototype.setRoomAuto = function(roomId, callback) {
     strictSSL: false,
     headers: HEADER,
     body: JSON.stringify(body)
-  }, function(err, response) {
+  }, function (err, response) {
     if (err || response.statusCode !== 200 || response.statusMessage !== "OK") {
       if (err) {
         console.error("Error: setRoomAuto", err);
@@ -551,21 +381,9 @@ Warmup4IE.prototype.setRoomAuto = function(roomId, callback) {
       }
     }
   });
-
-  /*
-  response = requests.post(url = this.TOKEN_URL, headers = this.HEADER, json = body)
-  // check if request was acceppted and if request was successful
-  if response.status_code != 200 or\
-  response.json()['status']['result'] != 'success':
-    debug(
-      "Setting new target temperature to auto failed, %s", response)
-  return
-  debug("Successfully set new target temperature to auto, "
-    "response from server: '%s'", response.text)
-    */
 };
 
-Warmup4IE.prototype.setRoomOverRide = function(roomId, callback) {
+Warmup4IE.prototype.setRoomOverRide = function (roomId, callback) {
   // set device to manual mode
   // make sure the room/device is already configured
 
@@ -592,7 +410,7 @@ Warmup4IE.prototype.setRoomOverRide = function(roomId, callback) {
     strictSSL: false,
     headers: HEADER,
     body: JSON.stringify(body)
-  }, function(err, response) {
+  }, function (err, response) {
     if (err || response.statusCode !== 200 || response.statusMessage !== "OK") {
       if (err) {
         console.error("Error: setRoomOn", err);
@@ -621,22 +439,9 @@ Warmup4IE.prototype.setRoomOverRide = function(roomId, callback) {
     }
   });
 
-  /*
-  response = requests.post(url = this.TOKEN_URL, headers = this.HEADER, json = body)
-  // check if request was acceppted and if request was successful
-  if response.status_code != 200 or\
-  response.json()['status']['result'] != 'success':
-    debug(
-      "Setting new target temperature to "
-      "manual failed, %s", response)
-  return
-
-  debug("Successfully set new target temperature to manual, "
-    "response from server: '%s'", response.text)
-    */
 };
 
-Warmup4IE.prototype.setRoomFixed = function(roomId, callback) {
+Warmup4IE.prototype.setRoomFixed = function (roomId, callback) {
   // set device to manual mode
   // make sure the room/device is already configured
 
@@ -663,7 +468,7 @@ Warmup4IE.prototype.setRoomFixed = function(roomId, callback) {
     strictSSL: false,
     headers: HEADER,
     body: JSON.stringify(body)
-  }, function(err, response) {
+  }, function (err, response) {
     if (err || response.statusCode !== 200 || response.statusMessage !== "OK") {
       if (err) {
         console.error("Error: setRoomOn", err);
@@ -692,60 +497,10 @@ Warmup4IE.prototype.setRoomFixed = function(roomId, callback) {
     }
   });
 
-  /*
-  response = requests.post(url = this.TOKEN_URL, headers = this.HEADER, json = body)
-  // check if request was acceppted and if request was successful
-  if response.status_code != 200 or\
-  response.json()['status']['result'] != 'success':
-    debug(
-      "Setting new target temperature to "
-      "manual failed, %s", response)
-  return
 
-  debug("Successfully set new target temperature to manual, "
-    "response from server: '%s'", response.text)
-    */
 };
 
-/*
-function set_location_to_frost(self) {
-  // set device to frost protection mode
-  // make sure the room/device is already configured
-  if this.LocId is null or WarmupAccessToken is null:
-    return
-  body = {
-    "account": {
-      "email": this._username,
-      "token": WarmupAccessToken
-    },
-    "request": {
-      "method": "setModes",
-      "values": {
-        "holEnd": "-",
-        "fixedTemp": "",
-        "holStart": "-",
-        "geoMode": "0",
-        "holTemp": "-",
-        "locId": this.LocId,
-        "locMode": "frost"
-      }
-    }
-  }
-
-  response = requests.post(url = this.TOKEN_URL, headers = this.HEADER, json = body)
-  // check if request was acceppted and if request was successful
-  if response.status_code != 200 or\
-  response.json()['status']['result'] != 'success':
-    debug(
-      "Setting location to frost protection failed, %s", response)
-  return
-  debug("Successfully set location to frost protection, response "
-    "from server: '%s'", response.text)
-}
-
-*/
-
-Warmup4IE.prototype.setRoomOff = function(roomId, callback) {
+Warmup4IE.prototype.setRoomOff = function (roomId, callback) {
   //  turn off device
   // make sure the room/device is already configured
   var body = {
@@ -776,7 +531,7 @@ Warmup4IE.prototype.setRoomOff = function(roomId, callback) {
     strictSSL: false,
     headers: HEADER,
     body: JSON.stringify(body)
-  }, function(err, response) {
+  }, function (err, response) {
     if (err || response.statusCode !== 200 || response.statusMessage !== "OK") {
       if (err) {
         console.error("Error: setRoomOff", err);
@@ -804,182 +559,7 @@ Warmup4IE.prototype.setRoomOff = function(roomId, callback) {
       }
     }
   });
-
-  /*
-  response = requests.post(url = this.TOKEN_URL, headers = this.HEADER, json = body)
-  // check if request was acceppted and if request was successful
-  if response.status_code != 200 or\
-  response.json()['status']['result'] != 'success':
-    debug("Setting location to off mode failed, %s", response)
-  return
-  debug("Successfully set location to off mode, "
-    "response from server: '%s'", response.text)
-    */
 };
-
-/*
-
-Sample response from a room
-
-{
-    "roomId": 68345,
-    "roomName": "Ensuite",    --> name
-    "isOwner": true,
-    "roomType": "a",
-    "roomMode": "program",
-    "runMode": "off",         --> Is this CurrentHeatingCoolingState
-    "targetTemp": 210,        --> TargetTemperature
-    "overrideTemp": 0,
-    "overrideDur": 0,
-    "currentTemp": 220,       --> CurrentTemperature
-    "airTemp": "230",         --> Air Temp
-    "floor1Temp": "220",
-    "floor2Temp": "0",
-    "fixedTemp": 210,
-    "heatingTarget": 0,
-    "setbackTemp": 160,
-    "comfortTemp": 200,
-    "sleepTemp": 180,
-    "sleepActive": false,
-    "floorType": false,
-    "minTemp": 50,
-    "maxTemp": 300,
-    "energy": "0.00",
-    "cost": "0.00",
-    "mainRoom": true,
-    "schedule": [
-        {
-            "type": "0",
-            "mode": "0",
-            "day": 0,
-            "node": "2",
-            "value": [
-                {
-                    "start": "06:00",
-                    "end": "08:00",
-                    "temp": "210"
-                },
-                {
-                    "start": "18:00",
-                    "end": "22:00",
-                    "temp": "210"
-                }
-            ]
-        },
-        {
-            "type": "0",
-            "mode": "0",
-            "day": "1",
-            "node": "2",
-            "value": [
-                {
-                    "start": "06:00",
-                    "end": "08:00",
-                    "temp": "210"
-                },
-                {
-                    "start": "18:00",
-                    "end": "22:00",
-                    "temp": "210"
-                }
-            ]
-        },
-        {
-            "type": "0",
-            "mode": "0",
-            "day": "2",
-            "node": "2",
-            "value": [
-                {
-                    "start": "06:00",
-                    "end": "08:00",
-                    "temp": "210"
-                },
-                {
-                    "start": "18:00",
-                    "end": "22:00",
-                    "temp": "210"
-                }
-            ]
-        },
-        {
-            "type": "0",
-            "mode": "0",
-            "day": "3",
-            "node": "2",
-            "value": [
-                {
-                    "start": "06:00",
-                    "end": "08:00",
-                    "temp": "210"
-                },
-                {
-                    "start": "18:00",
-                    "end": "22:00",
-                    "temp": "210"
-                }
-            ]
-        },
-        {
-            "type": "0",
-            "mode": "0",
-            "day": "4",
-            "node": "2",
-            "value": [
-                {
-                    "start": "06:00",
-                    "end": "08:00",
-                    "temp": "210"
-                },
-                {
-                    "start": "18:00",
-                    "end": "22:00",
-                    "temp": "210"
-                }
-            ]
-        },
-        {
-            "type": "0",
-            "mode": "0",
-            "day": "5",
-            "node": "2",
-            "value": [
-                {
-                    "start": "06:00",
-                    "end": "08:00",
-                    "temp": "210"
-                },
-                {
-                    "start": "18:00",
-                    "end": "22:00",
-                    "temp": "210"
-                }
-            ]
-        },
-        {
-            "type": "0",
-            "mode": "0",
-            "day": "6",
-            "node": "2",
-            "value": [
-                {
-                    "start": "06:00",
-                    "end": "08:00",
-                    "temp": "210"
-                },
-                {
-                    "start": "18:00",
-                    "end": "22:00",
-                    "temp": "210"
-                }
-            ]
-        }
-    ],
-    "sensorFault": "001",
-    "hasPolled": true,
-    "lastPoll": 0
-
-*/
 
 function isEmptyObject(obj) {
   var name;
