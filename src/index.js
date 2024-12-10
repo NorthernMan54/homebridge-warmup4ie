@@ -1,4 +1,4 @@
-// This platform integrates Honeywell warmup4ie into homebridge
+// This platform integrates warmup4ie into homebridge
 // As I only own single thermostat, so this only works with one, but it is
 // conceivable to handle mulitple with additional coding.
 //
