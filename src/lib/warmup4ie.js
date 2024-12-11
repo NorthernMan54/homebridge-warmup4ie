@@ -1,4 +1,4 @@
-const debug = require('debug')('warmup4ie-lib');
+const debug = require('debug')('warmup4ie:lib');
 const request = require('request');
 
 const TOKEN_URL = 'https://api.warmup.com/apps/app/v1';
@@ -26,23 +26,23 @@ class Warmup4IE {
     this._target_temperature = options.target_temp;
     this._refresh = options.refresh;
     this._duration = options.duration;
-    this.room = {};
+    this.room = [];
 
     this.setup_finished = false;
 
     this._generateAccessToken(() => {
       this._getLocations(() => {
-        this._getRooms((err, rooms) => {
+        this.getStatus((err, rooms) => {
           callback(null, rooms);
         });
       });
     });
 
-    setInterval(this.pollDevices.bind(this), (this._refresh * 1000) / 2);
+    this.refreshInterval = setInterval(this.pollDevices.bind(this), (this._refresh * 1000) / 2);
   }
 
   pollDevices() {
-    this._getRooms(() => { });
+    this.getStatus(() => { });
   }
 
   _sendRequest(body, callback) {
@@ -109,7 +109,7 @@ class Warmup4IE {
     });
   }
 
-  _getRooms(callback) {
+  getStatus(callback) {
     if (!LocId || !WarmupAccessToken) return callback(new Error('Missing LocId or AccessToken.'));
 
     const body = {
@@ -200,6 +200,11 @@ class Warmup4IE {
 
     this.room[roomId] = null;
     this._sendRequest(body, callback);
+  }
+
+  destroy() {
+    debug('Destroying Warmup4IE');
+    clearInterval(this.refreshInterval);
   }
 }
 

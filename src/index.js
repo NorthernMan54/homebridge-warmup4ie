@@ -132,6 +132,7 @@ function updateStatus(room) {
 
   acc.log_event_counter++;
   if (!(acc.log_event_counter % 10)) {
+    debug("Fakegato Data", acc.log_event_counter);
     acc.loggingService.addEntry({
       time: moment().unix(),
       currentTemp: service.getCharacteristic(Characteristic.CurrentTemperature).value,
@@ -165,24 +166,52 @@ Warmup4ieAccessory.prototype = {
     this.log("Setting system switch for", this.name, "to", value);
     switch (value) {
       case 0: // Off
-        thermostats.setRoomOff(this.roomId, callback);
+        thermostats.setRoomOff(this.roomId, (err, json) => {
+          if (err) {
+            callback(err);
+          } else {
+            debug("setRoomOff - Result", json);
+            callback(null);
+          }
+        });
         break;
       case 1: // Heat
         if (this.room.runMode === "fixed" || this.room.runMode === "override") {
           callback(null);
         } else {
-          thermostats.setRoomAuto(this.roomId, callback);
+          thermostats.setRoomAuto(this.roomId, (err, json) => {
+            if (err) {
+              callback(err);
+            } else {
+              debug("setRoomAuto - Result", json);
+              callback(null);
+            }
+          });
         }
         break;
       case 3: // Auto
-        thermostats.setRoomAuto(this.roomId, callback);
+        thermostats.setRoomAuto(this.roomId, (err, json) => {
+          if (err) {
+            callback(err);
+          } else {
+            debug("setRoomAuto - Result", json);
+            callback(null);
+          }
+        });
         break;
     }
   },
 
   setTargetTemperature: function (value, callback) {
     this.log("Setting target temperature for", this.name, "to", value + "°");
-    thermostats.setTargetTemperature(this.roomId, value, callback);
+    thermostats.setTargetTemperature(this.roomId, value, (err, json) => {
+      if (err) {
+        callback(err);
+      } else {
+        debug("setTargetTemperature - Result", json);
+        callback(null);
+      }
+    });
   },
 
   getServices: function () {

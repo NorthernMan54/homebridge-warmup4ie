@@ -51,7 +51,7 @@
     ],
     "ext": "js",
     "ignore": [],
-    "exec": "~/npm/bin/homebridge -U ./test/hbConfig -Q -T -D -P .",
+    "exec": "DEBUG=HAP-NodeJS*,warmup4ie* ~/npm/bin/homebridge -U ./test/hbConfig -I -Q -T -D -P .",
     "signal": "SIGTERM",
     "env": {
       "NODE_OPTIONS": "--trace-warnings"
