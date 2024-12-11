@@ -20,8 +20,8 @@ var storage, thermostats;
 module.exports = function (homebridge) {
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
-  CustomCharacteristics = new homebridgeLib.EveHomeKitTypes(homebridge).Characteristics;
-  FakeGatoHistoryService = require('fakegato-history')(homebridge);
+  //  CustomCharacteristics = new homebridgeLib.EveHomeKitTypes(homebridge).Characteristics;
+  //  FakeGatoHistoryService = require('fakegato-history')(homebridge);
 
   homebridge.registerPlatform("homebridge-warmup4ie", "warmup4ie", warmup4iePlatform);
 };
@@ -130,17 +130,17 @@ function updateStatus(room) {
   service.getCharacteristic(Characteristic.TargetHeatingCoolingState)
     .updateValue(targetHeatingCoolingState);
 
-  acc.log_event_counter++;
-  if (!(acc.log_event_counter % 10)) {
-    debug("Fakegato Data", acc.log_event_counter);
-    acc.loggingService.addEntry({
-      time: moment().unix(),
-      currentTemp: service.getCharacteristic(Characteristic.CurrentTemperature).value,
-      setTemp: service.getCharacteristic(Characteristic.TargetTemperature).value,
-      valvePosition: service.getCharacteristic(Characteristic.TargetHeatingCoolingState).value
-    });
-    acc.log_event_counter = 0;
-  }
+  //  acc.log_event_counter++;
+  //  if (!(acc.log_event_counter % 10)) {
+  //    debug("Fakegato Data", acc.log_event_counter);
+  //    acc.loggingService.addEntry({
+  //      time: moment().unix(),
+  //      currentTemp: service.getCharacteristic(Characteristic.CurrentTemperature).value,
+  //      setTemp: service.getCharacteristic(Characteristic.TargetTemperature).value,
+  //      valvePosition: service.getCharacteristic(Characteristic.TargetHeatingCoolingState).value
+  //    });
+  //    acc.log_event_counter = 0;
+  //  }
 
   service = acc.temperatureService;
   service.getCharacteristic(Characteristic.CurrentTemperature)
@@ -156,7 +156,7 @@ function Warmup4ieAccessory(that, name, room) {
   this.username = that.username;
   this.password = that.password;
   this.room = room;
-  this.log_event_counter = 0;
+  //  this.log_event_counter = 0;
   this.roomId = room.roomId;
 }
 
@@ -269,15 +269,14 @@ Warmup4ieAccessory.prototype = {
         maxValue: 100
       });
 
-    this.thermostatService.log = this.log;
-    this.loggingService = new FakeGatoHistoryService("thermo", this.thermostatService, {
-      storage: storage,
-      minutes: this.refresh * 10 / 60
-    });
+    //  this.loggingService = new FakeGatoHistoryService("thermo", this.thermostatService, {
+    //    storage: storage,
+    //    minutes: this.refresh * 10 / 60
+    //  });
 
-    this.thermostatService.addCharacteristic(CustomCharacteristics.ValvePosition);
-    this.thermostatService.addCharacteristic(CustomCharacteristics.ProgramCommand);
-    this.thermostatService.addCharacteristic(CustomCharacteristics.ProgramData);
+    //  this.thermostatService.addCharacteristic(CustomCharacteristics.ValvePosition);
+    //  this.thermostatService.addCharacteristic(CustomCharacteristics.ProgramCommand);
+    //  this.thermostatService.addCharacteristic(CustomCharacteristics.ProgramData);
 
     var targetTemperature = (this.room.targetTemp > this.room.minTemp ? this.room.targetTemp : this.room.minTemp);
     this.thermostatService.getCharacteristic(Characteristic.TargetTemperature)
@@ -324,6 +323,6 @@ Warmup4ieAccessory.prototype = {
     this.thermostatService.getCharacteristic(Characteristic.TargetHeatingCoolingState)
       .updateValue(targetHeatingCoolingState);
 
-    return [informationService, this.thermostatService, this.temperatureService, this.loggingService];
+    return [informationService, this.thermostatService, this.temperatureService];
   }
 };
