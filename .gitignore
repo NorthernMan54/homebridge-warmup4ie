@@ -11,3 +11,4 @@ test/hbConfig/.uix-dashboard.json
 test/hbConfig/.uix-secrets
 /test/hbConfig/accessories
 /test/hbConfig/persist
+test/hbConfig/config.json

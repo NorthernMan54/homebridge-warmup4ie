@@ -2,26 +2,6 @@
 // As I only own single thermostat, so this only works with one, but it is
 // conceivable to handle mulitple with additional coding.
 //
-// The configuration is stored inside the ../config.json
-// {
-//     "platform": "warmup4ie",
-//     "name":     "Thermostat",
-//     "username" : "username/email",
-//     "password" : "password",
-//     "debug" : "True",      - Optional
-//     "refresh": "60",       - Optional
-//     "devices" : [
-//        { "location": "123456789", "name" : "Main Floor Thermostat" },
-//        { "deviceID": "123456789", "name" : "Upper Floor Thermostat" }
-//     ]
-// }
-//
-//     name: YOUR_DESCRIPTION
-//    username: YOUR_E_MAIL_ADDRESS
-//    password: YOUR_PASSWORD
-//    location: YOUR_LOCATION_NAME
-//    room: YOUR_ROOM_NAME
-//
 
 /*jslint node: true */
 'use strict';
@@ -30,7 +10,7 @@ var debug = require('debug')('warmup4ie');
 var Service, Characteristic, FakeGatoHistoryService, CustomCharacteristics;
 var os = require("os");
 var hostname = os.hostname();
-var Warmup4ie = require('./lib/warmup4ie.js').Warmup4IE;
+const Warmup4ie = require('./lib/warmup4ie').Warmup4IE;
 const moment = require('moment');
 var homebridgeLib = require('homebridge-lib');
 
@@ -204,92 +184,6 @@ Warmup4ieAccessory.prototype = {
     this.log("Setting target temperature for", this.name, "to", value + "°");
     thermostats.setTargetTemperature(this.roomId, value, callback);
   },
-
-  /*
-  setCoolingThresholdTemperature: function(value, callback) {
-    var that = this;
-    if (!updating) {
-      updating = true;
-
-      //    maxValue: 38,
-      //    minValue: 10,
-
-      that.log("Setting cooling threshold temperature for", this.name, "to", value + "°");
-
-      if (value < 10)
-        value = 10;
-
-      if (value > 38)
-        value = 38;
-
-      value = warmup4ie.towarmup4ieTemperature(that, value);
-      // TODO:
-      // verify that the task did succeed
-
-      warmup4ie.login(this.username, this.password).then(function(session) {
-        session.setHeatCoolSetpoint(that.deviceID, null, value, that.usePermanentHolds).then(function(taskId) {
-          that.log("Successfully changed cooling threshold!");
-          that.log(taskId);
-          // returns taskId if successful
-          // nothing else here...
-          updateValues(that);
-          callback(null, Number(1));
-        });
-      }).fail(function(err) {
-        that.log('warmup4ie Failed:', err);
-        callback(null, Number(0));
-      });
-      callback(null, Number(0));
-      updating = false;
-    }
-  },
-
-  setHeatingThresholdTemperature: function(value, callback) {
-    var that = this;
-    if (!updating) {
-      updating = true;
-
-      //    maxValue: 38,
-      //    minValue: 10,
-
-      that.log("Setting heating threshold temperature for", this.name, "to", value + "°");
-
-      if (value < 10)
-        value = 10;
-
-      if (value > 38)
-        value = 38;
-
-      value = warmup4ie.towarmup4ieTemperature(that, value);
-      // TODO:
-      // verify that the task did succeed
-
-      warmup4ie.login(this.username, this.password).then(function(session) {
-        session.setHeatCoolSetpoint(that.deviceID, value, null).then(function(taskId) {
-          that.log("Successfully changed heating threshold!");
-          that.log(taskId);
-          // returns taskId if successful
-          // nothing else here...
-          updateValues(that);
-          callback(null, Number(1));
-        });
-      }).fail(function(err) {
-        that.log('warmup4ie Failed:', err);
-        callback(null, Number(0));
-      });
-      callback(null, Number(0));
-      updating = false;
-    }
-  },
-
-  setTemperatureDisplayUnits: function(value, callback) {
-    var that = this;
-
-    that.log("set temperature units to", value);
-    callback();
-  },
-
-  */
 
   getServices: function () {
     // var that = this;

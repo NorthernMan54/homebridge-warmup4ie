@@ -23,10 +23,10 @@
     "homebridge": ">=0.4.16"
   },
   "dependencies": {
-    "debug": ">2.6.9",
-    "fakegato-history": "^0.5.5",
+    "debug": "^4.4.0",
+    "fakegato-history": "^0.6.5",
     "homebridge-lib": "^6.0.1",
-    "moment": "^2.20.1",
+    "moment": "^2.30.1",
     "request": "^2.34.0",
     "semver": "^7.6.3"
   },
@@ -44,5 +44,17 @@
   "bugs": {
     "url": "https://github.com/NorthernMan54/homebridge-warmup4ie/issues"
   },
-  "homepage": "https://github.com/NorthernMan54/homebridge-warmup4ie#readme"
+  "homepage": "https://github.com/NorthernMan54/homebridge-warmup4ie#readme",
+  "nodemonConfig": {
+    "watch": [
+      "src"
+    ],
+    "ext": "js",
+    "ignore": [],
+    "exec": "~/npm/bin/homebridge -U ./test/hbConfig -Q -T -D -P .",
+    "signal": "SIGTERM",
+    "env": {
+      "NODE_OPTIONS": "--trace-warnings"
+    }
+  }
 }
