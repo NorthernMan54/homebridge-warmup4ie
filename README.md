@@ -9,6 +9,7 @@ Plugin works with program mode only, and changes to the temperature are treated 
 <!--ts-->
    * [homebridge-warmup4ie](#homebridge-warmup4ie)
    * [Table of Contents](#table-of-contents)
+   * [Tested Warmup thermostats](#tested-warmup-thermostats)
    * [Using the plugin](#using-the-plugin)
       * [Temperature Control](#temperature-control)
       * [Mode Setting](#mode-setting)
@@ -35,9 +36,9 @@ Changes to the temperature create a temperature override for the current setting
 
 ## Mode Setting
 
-`Off` - Turns off the thermostat
-`Heat` - Turns on the thermostat and resumes current program
-`Auto` - Turns on the thermostat and resumes current program
+* `Off` - Turns off the thermostat
+* `Heat` - Turns on the thermostat and resumes current program
+* `Auto` - Turns on the thermostat and resumes current program
 
 When the thermostat is in temperature override mode, the Mode setting is set to `Heat`.  To clear the override and resume program mode, turn the mode control to `Auto`.
 
