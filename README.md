@@ -1,6 +1,6 @@
 # homebridge-warmup4ie
 
-Homebridge plugin for the WarmUP 4iE thermostat.
+Homebridge plugin for the WarmUP 4iE and 6iE thermostat.
 
 Plugin works with program mode only, and changes to the temperature are treated as an override.  Fixed temperature mode is not supported.  
 
@@ -19,6 +19,11 @@ Plugin works with program mode only, and changes to the temperature are treated 
 <!-- Added by: sgracey, at:  -->
 
 <!--te-->
+
+# Tested Warmup thermostats
+
+* Warmup 4iE Smart Wifi Thermostat
+* Warmup 6iE Smart Wifi Thermostat
 
 # Using the plugin
 
