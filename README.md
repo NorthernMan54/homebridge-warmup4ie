@@ -1,6 +1,6 @@
 # Deprecation Notice
 
-This project has been deprecated as an excellent replacement plugin has been created by @nookied homebridge-warmup4ie-v2.  Please migrate to his project.
+This project has been deprecated as an excellent replacement plugin has been created by @nookied [homebridge-warmup4ie-v2](https://github.com/nookied/homebridge-warmup-v2).  Please migrate to his project.
 
 # homebridge-warmup4ie
 
