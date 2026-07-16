@@ -1,6 +1,6 @@
 {
   "name": "homebridge-warmup4ie",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Warmup4IE Thermostat Plugin Homebridge",
   "main": "src/index.js",
   "scripts": {
@@ -15,8 +15,7 @@
     "url": "git+https://github.com/NorthernMan54/homebridge-warmup4ie.git"
   },
   "keywords": [
-    "warmup4ie",
-    "homebridge-plugin"
+    "warmup4ie"
   ],
   "engines": {
     "homebridge": "^1.6.0 || ^2.0.0-beta.0",
